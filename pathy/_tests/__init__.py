@@ -13,3 +13,11 @@ try:
     has_s3 = bool(BucketClientS3)
 except ImportError:
     has_s3 = False
+
+has_azure: bool
+try:
+    from ..azure import BucketClientAzure
+
+    has_azure = bool(BucketClientAzure)
+except ImportError:
+    has_azure = False

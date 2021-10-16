@@ -167,7 +167,7 @@ class BucketClient:
             newline=newline,
             transport_params=client_params,
             # Disable de/compression based on the file extension
-            ignore_ext=True,
+            compression="disable",
         )  # type:ignore
 
     def make_uri(self, path: "Pathy") -> str:
@@ -1158,6 +1158,7 @@ _client_registry: Dict[str, Type[BucketClient]] = {
 # Optional clients that we attempt to dynamically load when encountering
 # a Pathy object with a matching scheme
 _optional_clients: Dict[str, str] = {
+    "azure": "pathy.azure",
     "gs": "pathy.gcs",
     "s3": "pathy.s3",
 }
@@ -1170,10 +1171,17 @@ _fs_client: Optional["BucketClientFS"] = None
 _fs_cache: Optional[pathlib.Path] = None
 
 
-def register_client(scheme: str, type: Type[BucketClient]) -> None:
+def register_client(scheme: str, cls: Optional[Type[BucketClient]] = None) -> None:
     """Register a bucket client for use with certain scheme Pathy objects"""
-    global _client_registry
-    _client_registry[scheme] = type
+    if cls:
+        global _client_registry
+        _client_registry[scheme] = cls
+    else:
+        def decorator(cls):
+            global _client_registry
+            _client_registry[scheme] = cls
+            return cls
+        return decorator
 
 
 def get_client(scheme: str) -> BucketClientType:  # type:ignore

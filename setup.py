@@ -19,6 +19,7 @@ def setup_package():
     with readme_path.open("r", encoding="utf8") as f:
         long_description = f.read()
     extras = {
+        "azure": ["azure-blob-storage>=12.9,<13"],
         "gcs": ["google-cloud-storage>=1.26.0,<2.0.0"],
         "s3": ["boto3"],
         "test": ["pytest", "pytest-coverage", "mock", "typer-cli"],

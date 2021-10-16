@@ -4,18 +4,26 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Generator, Optional, Tuple
+from typing import Any, Generator, Optional, Tuple, Union
 
 import pytest
 
 from pathy import Pathy, set_client_params, use_fs, use_fs_cache
 
-from . import has_gcs
+from . import has_gcs, has_azure
 
-has_credentials = "GCS_CREDENTIALS" in os.environ
+TEST_ADAPTERS = ["fs"]
 
-# Which adapters to use
-TEST_ADAPTERS = ["gcs", "s3", "fs"] if has_credentials and has_gcs else ["fs"]
+# if "GCS_CREDENTIALS" in os.environ and has_gcs:
+#     TEST_ADAPTERS.append("gcs")
+
+# if "GCS_CREDENTIALS" in os.environ and has_gcs:
+#     TEST_ADAPTERS.append("gcs")
+
+
+# # Which adapters to use
+# TEST_ADAPTERS = ["gcs", "s3", "azure", "fs"] if has_credentials and has_gcs else ["fs"]
+TEST_ADAPTERS = ["azure", "fs"]
 # A unique identifier used to allow each python version and OS to test
 # with separate bucket paths. This makes it possible to parallelize the
 # tests.
@@ -94,6 +102,18 @@ def s3_credentials_from_env() -> Optional[Tuple[str, str]]:
     return (access_key_id, access_secret)
 
 
+def azure_credentials_from_env() -> Optional[Union[str, Tuple[str, str]]]:
+    if not has_azure:
+        return None
+    conn_str: Optional[str] = os.getenv("PATHY_AZURE_CONN_STR")
+    if conn_str is not None:
+        return conn_str
+    else:
+        account_url: Optional[str] = os.getenv("PATHY_AZURE_ACCOUNT_URL")
+        credential: Optional[str] = os.getenv("PATHY_AZURE_CREDENTIAL")
+        return (account_url, credential)
+
+
 @pytest.fixture()
 def with_adapter(
     adapter: str, bucket: str, other_bucket: str
@@ -114,6 +134,17 @@ def with_adapter(
         if credentials is not None:
             key_id, key_secret = credentials
             set_client_params("s3", key_id=key_id, key_secret=key_secret)
+    elif adapter == "azure":
+        scheme = "azure"
+
+        use_fs(False)
+        credentials = azure_credentials_from_env()
+        if credentials is not None:
+            if isinstance(credentials, str):
+                set_client_params("azure", connection_string=credentials)
+            else:
+                account_url, credential = credentials
+                set_client_params("azure", account_url=account_url, credential=credential)
     elif adapter == "fs":
         # Use local file-system in a temp folder
         tmp_dir = tempfile.mkdtemp()

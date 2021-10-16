@@ -41,11 +41,11 @@ assert not greeting.exists()
 
 The table below details the supported cloud provider APIs.
 
-| Cloud Service        | Support |      Install Extras      |
-| :------------------- | :-----: | :----------------------: |
-| Google Cloud Storage |   ✅    | `pip install pathy[gcs]` |
-| Amazon S3            |   ✅    | `pip install pathy[s3]`  |
-| Azure                |   ❌    |                          |
+| Cloud Service        | Support |      Install Extras        |
+| :------------------- | :-----: | :------------------------: |
+| Google Cloud Storage |   ✅    | `pip install pathy[gcs]`   |
+| Amazon S3            |   ✅    | `pip install pathy[s3]`    |
+| Azure                |   ✅    | `pip install pathy[azure]` |
 
 ## Semantic Versioning
 

@@ -116,9 +116,7 @@ class BucketClientS3(BucketClient):
 
     @property
     def client_params(self) -> Dict[str, Any]:
-        session: Any = self._session
-        result: Any = dict() if session is None else dict(client=session.client("s3"))
-        return result
+        return dict(client=self.client)
 
     def __init__(self, **kwargs: Any) -> None:
         self.recreate(**kwargs)
@@ -126,13 +124,14 @@ class BucketClientS3(BucketClient):
     def recreate(self, **kwargs: Any) -> None:
         key_id = kwargs.get("key_id", None)
         key_secret = kwargs.get("key_secret", None)
+        endpoint_url = kwargs.get("endpoint_url", None)
         boto_session: Any = boto3
         if key_id is not None and key_secret is not None:
             self._session = boto_session = boto3.Session(  # type:ignore
                 aws_access_key_id=key_id,
                 aws_secret_access_key=key_secret,
             )
-        self.client = boto_session.client("s3")  # type:ignore
+        self.client = boto_session.client("s3", endpoint_url=endpoint_url)  # type:ignore
 
     def make_uri(self, path: PurePathy) -> str:
         return str(path)

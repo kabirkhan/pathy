@@ -90,6 +90,7 @@ class BucketGCS(Bucket):
         return self.bucket.exists()  # type:ignore
 
 
+@register_client("gs")
 class BucketClientGCS(BucketClient):
     client: GCSNativeClient
 
@@ -216,6 +217,3 @@ class ScanDirGCS(PathyScanDir):
                         last_modified=item.updated.timestamp(),
                         raw=item,
                     )
-
-
-register_client("gs", BucketClientGCS)

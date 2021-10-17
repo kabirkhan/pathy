@@ -29,6 +29,8 @@ from typing import (
 )
 
 import smart_open
+from pathy.env import azure_credentials_from_env
+
 
 SUBCLASS_ERROR = "must be implemented in a subclass"
 
@@ -341,7 +343,16 @@ class BucketsAccessor(_Accessor):  # type:ignore
     _client: Optional[BucketClient]
 
     def client(self, path: "Pathy") -> BucketClient:
-        return get_client(path.scheme)
+        if path.scheme == "azure":
+            credentials = azure_credentials_from_env()
+            print("LOADED CREDENTIALS", credentials)
+            if isinstance(credentials, str):
+                set_client_params("azure", connection_string=credentials)
+            else:
+                account_url, credential = credentials
+                set_client_params("azure", account_url=account_url, credential=credential)
+        client = get_client(path.scheme)
+        return client
 
     def get_blob(self, path: "Pathy") -> Optional[Blob]:
         """Get the blob associated with a path or return None"""
@@ -1177,9 +1188,11 @@ def register_client(scheme: str, cls: Optional[Type[BucketClient]] = None) -> No
         global _client_registry
         _client_registry[scheme] = cls
     else:
+        print("DECORATOR")
         def decorator(cls):
             global _client_registry
             _client_registry[scheme] = cls
+            print("INSIDE DEC CLASS:", scheme, cls)
             return cls
         return decorator
 
@@ -1188,6 +1201,7 @@ def get_client(scheme: str) -> BucketClientType:  # type:ignore
     """Retrieve the bucket client for use with a given scheme"""
     global _client_registry, _instance_cache, _fs_client
     global _optional_clients, _client_args_registry
+    print("GET CLIENT: ", scheme, _client_registry)
     if _fs_client is not None:
         return _fs_client  # type: ignore
     if scheme in _instance_cache:

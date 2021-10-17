@@ -160,13 +160,13 @@ class BucketClientAzure(BucketClient):
     ) -> Generator[Any, None, None]:
         return self.client.list_containers(**kwargs)  # type:ignore
 
-    # def scandir(  # type:ignore[override]
-    #     self,
-    #     path: Optional[PurePathy] = None,
-    #     prefix: Optional[str] = None,
-    #     delimiter: Optional[str] = None,
-    # ) -> PathyScanDir:
-    #     return ScanDirGCS(client=self, path=path, prefix=prefix, delimiter=delimiter)
+    def scandir(  # type:ignore[override]
+        self,
+        path: Optional[PurePathy] = None,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = None,
+    ) -> PathyScanDir:
+        return ScanDirAzure(client=self, path=path, prefix=prefix, delimiter=delimiter)
 
     def list_blobs(
         self,
@@ -195,4 +195,34 @@ class BucketClientAzure(BucketClient):
                 updated=int(item.last_modified.timestamp()),
             )
 
-# register_client("azure", BucketClientAzure)
+
+class ScanDirAzure(PathyScanDir):
+    _client: BucketClientAzure
+
+    def __init__(
+        self,
+        client: BucketClient,
+        path: Optional[PurePathy] = None,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        page_size: Optional[int] = None,
+    ) -> None:
+        super().__init__(client=client, path=path, prefix=prefix, delimiter=delimiter)
+        self._page_size = page_size
+
+    def scandir(self) -> Generator[BucketEntryAzure, None, None]:
+        if self._path is None or not self._path.root:
+            azure_bucket: BucketAzure
+            for azure_bucket in self._client.list_buckets():
+                yield BucketEntryAzure(azure_bucket.name, is_dir=True, raw=None)
+            return
+        sep = self._path._flavour.sep  # type:ignore
+        bucket = self._client.lookup_bucket(self._path)
+        if bucket is None:
+            return
+
+        container_client: ContainerClient = self._client.client.get_container_client(self._path.root)
+        for file in container_client.walk_blobs('', delimiter='/'):
+            yield BucketEntryAzure(
+                name=file.name
+            )

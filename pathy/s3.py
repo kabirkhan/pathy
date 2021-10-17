@@ -110,6 +110,7 @@ class BucketS3(Bucket):
         return True
 
 
+@register_client("s3")
 class BucketClientS3(BucketClient):
     client: S3NativeClient
     _session: Optional[boto3.Session]
@@ -260,6 +261,3 @@ class ScanDirS3(PathyScanDir):
             if not response.get("IsTruncated"):
                 break
             continuation_token = response.get("NextContinuationToken")
-
-
-register_client("s3", BucketClientS3)

@@ -13,7 +13,7 @@ AZURE_ADAPTER = ["azure"]
 def test_azure_create_bucket(
     with_adapter: str, bucket: str, other_bucket: str
 ) -> None:
-    root = Pathy(f"azure://foo")
+    root = Pathy(f"az://foo")
     root.mkdir(exist_ok=True)
     client = root._accessor.client(root)
     assert "foo" in [bucket.name for bucket in client.list_buckets()]
@@ -43,7 +43,7 @@ def test_azure_list_buckets(
 ) -> None:
     from pathy.azure import BucketClientAzure
 
-    root = Pathy(f"azure://foo/bar")
+    root = Pathy(f"az://foo/bar")
     client = root._accessor.client(root)  # type:ignore
     buckets = client.list_buckets()
     print(list(buckets))

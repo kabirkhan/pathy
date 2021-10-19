@@ -2,10 +2,9 @@ import builtins
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, List, Optional
 
-from azure.core.paging import ItemPaged
-
 try:
     from azure.core.exceptions import ResourceNotFoundError
+    from azure.core.paging import ItemPaged
     from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, BlobProperties
 except (ImportError, ModuleNotFoundError):
     raise ImportError(
@@ -41,7 +40,6 @@ class BlobAzure(Blob):
         self.raw.delete_blob()  # type:ignore
 
     def exists(self) -> bool:
-        print("CALLING EXISTS:", self.raw)
         return self.raw.exists()  # type:ignore
 
 
@@ -132,7 +130,6 @@ class BucketClientAzure(BucketClient):
         # "directory/foo.file") to return True, we enumerate the blobs with a prefix
         # and compare the object names to see if they match a substring of the path
         key_name = str(path.key)
-        print("CALLING EXISTS:", key_name, path)
         for obj in self.list_blobs(path):
             if obj.name.startswith(key_name + path._flavour.sep):  # type:ignore
                 return True
@@ -150,8 +147,6 @@ class BucketClientAzure(BucketClient):
             if container_client.exists():
                 return BucketAzure(str(path.root), bucket=container_client)
         except Exception as e:# BadRequest: TODO
-            print("ERROR GETTING BUCKET")
-            print(e)
             pass
         raise FileNotFoundError(f"Bucket {path.root} does not exist!")
 
@@ -179,11 +174,9 @@ class BucketClientAzure(BucketClient):
             return
 
         container_client: ContainerClient = self.client.get_container_client(path.root)
-        container_client.list_blobs()
         response: ItemPaged[BlobProperties] = container_client.list_blobs(  # type:ignore
-            path.root, prefix=prefix
+            prefix=prefix
         )
-        
         for item in response:  # type:ignore
             native_blob_client = container_client.get_blob_client(item.name)
             yield BlobAzure(

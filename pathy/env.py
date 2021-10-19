@@ -12,5 +12,6 @@ def azure_credentials_from_env() -> Optional[Union[str, Tuple[str, str]]]:
     else:
         account_url: Optional[str] = os.getenv("PATHY_AZURE_ACCOUNT_URL")
         credential: Optional[str] = os.getenv("PATHY_AZURE_CREDENTIAL")
-        credentials = (account_url, credential)
+        if account_url and credential:
+            credentials = (account_url, credential)
     return credentials
